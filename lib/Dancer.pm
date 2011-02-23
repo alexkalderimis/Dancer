@@ -33,10 +33,12 @@ use File::Spec;
 
 use base 'Exporter';
 
-@EXPORT    = qw(
+our @EXPORT_OK = qw( 
+  after_route
+  before_route
+  before
   after
   any
-  before
   before_template
   cookies
   config
@@ -99,8 +101,10 @@ use base 'Exporter';
 # Dancer's syntax
 
 sub after           { Dancer::Route::Registry->hook('after', @_) }
+sub after_route     { goto &after };
 sub any             { Dancer::App->current->registry->any_add(@_) }
 sub before          { Dancer::Route::Registry->hook('before', @_) }
+sub before_route    { goto &before };
 sub before_template { Dancer::Route::Registry->hook('before_template', @_) }
 sub captures        { Dancer::SharedData->request->params->{captures} }
 sub cookies         { Dancer::Cookies->cookies }
@@ -283,7 +287,11 @@ sub import {
 
     strict->import;
     utf8->import;
-    $class->export_to_level(1, $class, @EXPORT);
+    my @symbols = ($symbol && $symbol eq ':moose_fiendly')
+        ? grep { $_ !~ /^(before|after)$/ } @EXPORT_OK
+        : @EXPORT_OK;
+
+    $class->export_to_level(1, $class, @symbols);
 
     # if :syntax option exists, don't change settings
     if ($symbol && $symbol eq ':syntax') {
@@ -440,6 +448,10 @@ You can define multiple after filters, using the C<after> helper as
 many times as you wish; each filter will be executed, in the order you added
 them.
 
+=head2 after_route
+
+A synonym for "after"
+
 =head2 any
 
 Defines a route for multiple HTTP methods at once:
@@ -477,6 +489,10 @@ redirection will be performed immediately.
 You can define multiple before filters, using the C<before> helper as
 many times as you wish; each filter will be executed in the order you added
 them.
+
+=head2 before_route 
+
+A synonym for "before".
 
 =head2 before_template
 
