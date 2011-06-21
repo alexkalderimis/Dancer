@@ -10,6 +10,11 @@ use Dancer::FileUtils 'path';
 
 use base 'Dancer::Engine';
 
+use constant { 
+    INCLUDE_VIEW => "include_view_name",
+    VIEW_KEY => "view_name",
+};
+
 Dancer::Factory::Hook->instance->install_hooks(
     qw/before_template_render after_template_render before_layout_render after_layout_render/
 );
@@ -137,6 +142,11 @@ sub template {
     # a before_template in apply_renderer survive to the apply_layout. GH#354
     $tokens  ||= {};
     $options ||= {};
+
+    if (my $key = Dancer::Config->settings->{$class->INCLUDE_VIEW}) {
+        $key = $class->VIEW_KEY if ($key eq "1");
+        $tokens->{$key} = $view;
+    }
 
     $content = $view ? Dancer::Template->engine->apply_renderer($view, $tokens)
                      : delete $options->{content};
